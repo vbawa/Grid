@@ -1,19 +1,13 @@
 import asyncio
-import requests
+import websockets
+import webbrowser
+from urllib import parse
+import json
 import uuid
 
 base_url = "https://www.coinbase.com/oauth/authorize?"
-getVars = {
-    'client_id': client_id,
-    'redirect_uri': redirect,
-    'response_type': 'code',
-    'scope': 'wallet:transactions:send,wallet:accounts:read',
-    'state': state,
-    'account_currency': 'ETH',
-    'meta[send_limit_amount]': '1',
-    'meta[send_limit_currency]': 'USD',
-    'meta[send_limit_period]': 'day'
-}
+redirect = "https://opengrid.ai/callback"
+client_id = "61638403d5bee9d1479b81788e5c81956d6c93af8dd078ef7d012716409bead5"
 
 async def get_auth_token(future, uri, state):
     async with websockets.connect(uri) as ws:
@@ -39,23 +33,36 @@ async def get_auth_token(future, uri, state):
                     break
             else:
                 print(f'got a message??? {msg}')
-				await ws.close()
-				future.set_reseult(msg)
-				break
-				
+                await ws.close()
+                future.set_result(msg)
+                break
+
 
 def get_token():
-	
-	state = str(uuid.uuid4())
-	
-	url = base_url + parse.urlencode(getVars)
-	print(f'making request to {url}')
-	webbrowser.open(url)
-	
-	loop = asyncio.get_event_loop()
-	future = asyncio.Future()
-	asyncio.ensure_future(get_auth_token(future, 'ws://localhost:3000', state))
-	loop.run_until_complete(future)
-	
-	print(f'future result: {future}')
-	loop.close()
+    state = str(uuid.uuid4())
+
+    getVars = {
+        'client_id': client_id,
+        'redirect_uri': redirect,
+        'response_type': 'code',
+        'scope': 'wallet:transactions:send,wallet:accounts:read',
+        'state': state,
+        'account_currency': 'ETH',
+        'meta[send_limit_amount]': '1',
+        'meta[send_limit_currency]': 'USD',
+        'meta[send_limit_period]': 'day'
+    }
+
+    url = base_url + parse.urlencode(getVars)
+    print(f'making request to {url}')
+    webbrowser.open(url)
+
+    loop = asyncio.get_event_loop()
+    future = asyncio.Future()
+    asyncio.ensure_future(get_auth_token(future, 'ws://localhost:3000', state))
+    loop.run_until_complete(future)
+
+    print(f'future result: {future}')
+    loop.close()
+
+    return future
