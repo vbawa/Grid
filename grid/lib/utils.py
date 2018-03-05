@@ -11,15 +11,15 @@ import numpy as np
 
 
 def get_ipfs_api(ipfs_addr='127.0.0.1', port=5001, max_tries=10):
-    print(f'\n{Fore.BLUE}UPDATE: {Style.RESET_ALL}Connecting to IPFS... this can take a few seconds...')    
+    print(f'\n{Fore.BLUE}UPDATE: {Style.RESET_ALL}Connecting to IPFS... this can take a few seconds...')
 
     # out = ipfsapi.connect(ipfs_addr, port)
-    # print(f'\n{Fore.GREEN}SUCCESS: {Style.RESET_ALL}Connected!!!')    
+    # print(f'\n{Fore.GREEN}SUCCESS: {Style.RESET_ALL}Connected!!!')
     # return out
 
     try:
         out = ipfsapi.connect(ipfs_addr, port)
-        print(f'\n{Fore.GREEN}SUCCESS: {Style.RESET_ALL}Connected!!!')    
+        print(f'\n{Fore.GREEN}SUCCESS: {Style.RESET_ALL}Connected!!!')
         return out
     except:
         print(f'\n{Fore.RED}ERROR: {Style.RESET_ALL}could not connect to IPFS.  Is your daemon running with pubsub support at {ipfs_addr} on port {port}? Let me try to start IPFS for you... (this will take ~15 seconds)')
@@ -30,7 +30,7 @@ def get_ipfs_api(ipfs_addr='127.0.0.1', port=5001, max_tries=10):
 
             try:
                 out = ipfsapi.connect(ipfs_addr, port)
-                print(f'\n{Fore.GREEN}SUCCESS: {Style.RESET_ALL}Connected!!!')    
+                print(f'\n{Fore.GREEN}SUCCESS: {Style.RESET_ALL}Connected!!!')
                 return out
             except:
                 ""
@@ -39,12 +39,12 @@ def get_ipfs_api(ipfs_addr='127.0.0.1', port=5001, max_tries=10):
     for try_index in range(max_tries):
         try:
             out = ipfsapi.connect(ipfs_addr, port)
-            print(f'\n{Fore.GREEN}SUCCESS: {Style.RESET_ALL}Connected!!!')    
+            print(f'\n{Fore.GREEN}SUCCESS: {Style.RESET_ALL}Connected!!!')
             return out
         except:
             print(f'\n{Fore.RED}ERROR: {Style.RESET_ALL}still could not connect to IPFS.  Is your daemon running with pubsub support at {ipfs_addr} on port {port}?')
             time.sleep(5)
-        
+
     print(f'\n{Fore.RED}ERROR: {Style.RESET_ALL}could not connect to IPFS. Failed after ' + str(max_tries) + ' attempts... Is IPFS installed? Consult the README at https://github.com/OpenMined/Grid')
     sys.exit()
 
@@ -108,7 +108,15 @@ def deserialize_keras_model(model_bin):
         model = keras.models.load_model('temp_model2.h5')
         return model
 
-# def load_tasks():
+
+def get_gridhub_config():
+    gridhub_file = f'{Path.home()}/.openmined/gridhub.json'
+    ensure_exists(gridhub_file, {})
+    with open(gridhub_file) as gridhub_fp:
+        gridhub_config = json.loads(gridhub_fp.read())
+
+    return gridhub_config
+
 
 def save_best_model_for_task(task, model):
     ensure_exists(f'{Path.home()}/.openmined/models.json', {})

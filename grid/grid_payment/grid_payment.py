@@ -1,15 +1,25 @@
 import requests
 from . import websockets
+from ..lib import utils
 
 
 class GridPayment():
     def __init__(self):
+        gridhub_config = utils.get_gridhub_config()
+
+        self.hostname = gridhub_config['hostname']
+        self.protocol = gridhub_config['protocol']
+
         self.client_id = "61638403d5bee9d1479b81788e5c81956d6c93af8dd078ef7d012716409bead5"
-        self.host = 'https://opengrid.ai/'
-        self.redirect = self.host + '/callback'
+        self.host = self.protocol + self.hostname
+
+        if gridhub_config['redirect']:
+            self.redirect = gridhub_config['redirect']
+        else:
+            self.redirect = f"{self.host}/callback"
 
     def authorize(self):
-        return websockets.get_token()
+        return websockets.get_token(self.hostname, self.redirect)
 
     def send_ether(self, access_token, refresh_token, email, amount):
         send_obj = {
@@ -19,7 +29,7 @@ class GridPayment():
             'amount': amount
         }
 
-        route = "/api/v0/sendEther"
+        route = "api/v0/sendEther"
 
         r = requests.post(self.host + route, json=send_obj)
 
