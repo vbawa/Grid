@@ -9,6 +9,7 @@ base_url = "https://www.coinbase.com/oauth/authorize?"
 redirect = "https://opengrid.ai/callback"
 client_id = "61638403d5bee9d1479b81788e5c81956d6c93af8dd078ef7d012716409bead5"
 
+
 async def get_auth_token(future, uri, state):
     async with websockets.connect(uri) as ws:
         state_message = {
@@ -32,7 +33,7 @@ async def get_auth_token(future, uri, state):
                     # No response to ping in 10 seconds, disconnect.
                     break
             else:
-                print(f'got a message??? {msg}')
+                print(f'got a message {msg}')
                 await ws.close()
                 future.set_result(msg)
                 break
@@ -63,6 +64,6 @@ def get_token():
     loop.run_until_complete(future)
 
     print(f'future result: {future}')
-    loop.close()
 
-    return future
+    ret = json.loads(future.result())
+    return ret
