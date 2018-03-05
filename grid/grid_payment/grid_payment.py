@@ -29,7 +29,7 @@ class GridPayment():
             'amount': amount
         }
 
-        route = "api/v0/sendEther"
+        route = "/api/v0/sendEther"
 
         r = requests.post(self.host + route, json=send_obj)
 
@@ -43,3 +43,19 @@ class GridPayment():
             print(r.status_code)
 
         return r.status_code
+
+    def refresh(self, access_token, refresh_token):
+        send_obj = {
+            'accessToken': access_token,
+            'refreshToken': refresh_token
+        }
+
+        route = "/api/v0/refresh"
+
+        r = requests.post(self.host + route, json=send_obj)
+
+        print(r.status_code)
+        if r.status_code == 200:
+            ret = r.json()
+            print(ret)
+            return ret
