@@ -5,6 +5,8 @@ from urllib import parse
 import json
 import uuid
 
+from ..lib import utils
+
 base_url = "https://www.coinbase.com/oauth/authorize?"
 client_id = "61638403d5bee9d1479b81788e5c81956d6c93af8dd078ef7d012716409bead5"
 
@@ -62,7 +64,11 @@ def get_token(hostname, redirect):
     asyncio.ensure_future(get_auth_token(future, f'ws://{hostname}', state))
     loop.run_until_complete(future)
 
-    print(f'future result: {future}')
+    r = future.result()
+    print(f'it is {r}')
+    result = json.loads(r)
+
+    utils.store_coinbase(result)
 
     ret = json.loads(future.result())
     return ret
