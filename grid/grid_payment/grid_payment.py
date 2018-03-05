@@ -25,8 +25,6 @@ class GridPayment():
 
         route = "/api/v0/sendEther"
 
-        # secretly override host
-        self.host = "localhost:3000"
         r = requests.post(self.host + route, json=send_obj)
 
         if r.status_code == 402:

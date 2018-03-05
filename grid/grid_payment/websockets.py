@@ -59,7 +59,7 @@ def get_token():
 
     loop = asyncio.get_event_loop()
     future = asyncio.Future()
-    asyncio.ensure_future(get_auth_token(future, 'ws://localhost:3000', state))
+    asyncio.ensure_future(get_auth_token(future, 'ws://opengrid.ai', state))
     loop.run_until_complete(future)
 
     print(f'future result: {future}')
