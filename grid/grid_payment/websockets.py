@@ -61,11 +61,10 @@ def get_token(hostname, redirect):
 
     loop = asyncio.get_event_loop()
     future = asyncio.Future()
-    asyncio.ensure_future(get_auth_token(future, f'ws://{hostname}', state))
+    asyncio.ensure_future(get_auth_token(future, f'wss://{hostname}', state))
     loop.run_until_complete(future)
 
     r = future.result()
-    print(f'it is {r}')
     result = json.loads(r)
 
     utils.store_coinbase(result)

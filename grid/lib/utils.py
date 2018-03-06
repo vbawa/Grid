@@ -122,7 +122,27 @@ def get_gridhub_config():
     with open(gridhub_file) as gridhub_fp:
         gridhub_config = json.loads(gridhub_fp.read())
 
-    return gridhub_config
+    defaults = {
+        'hostname': 'opengrid.ai',
+        'protocol': 'https://',
+        'redirect': 'https://opengrid.ai/callback'
+    }
+
+    set_values = {}
+
+    for key, val in defaults.items():
+        if key not in gridhub_config.keys():
+            set_values[key] = input(f'Select opengrid {key} (default: {val})')
+            if set_values[key] == '':
+                set_values[key] = val
+        else:
+            set_values[key] = gridhub_config[key]
+
+    with open(f"{Path.home()}/.openmined/gridhub.json", "w") as gh:
+            json.dump(set_values, gh)
+
+    with open(gridhub_file) as gridhub_fp:
+        return json.loads(gridhub_fp.read())
 
 
 def save_best_model_for_task(task, model):
@@ -220,7 +240,7 @@ def ensure_exists(path, default_contents=None):
     f = parts.pop()
     full_path = ""
 
-    print(f'all parts .... {parts}')
+    # print(f'all parts .... {parts}')
 
     for p in parts:
         # convert ~ to the users home directory
@@ -228,9 +248,9 @@ def ensure_exists(path, default_contents=None):
             p = str(Path.home())
 
         full_path = f'{full_path}{p}/'
-        print(f'full path {full_path}')
+        # print(f'full path {full_path}')
         if not os.path.exists(full_path):
-            print('making dir.... {full_path}')
+            # print('making dir.... {full_path}')
             os.makedirs(full_path)
 
     full_path = f'{full_path}{f}'
