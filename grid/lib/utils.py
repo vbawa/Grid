@@ -171,8 +171,10 @@ def store_task(name, address):
         with open(f"{Path.home()}/.openmined/tasks.json", "w") as task_file:
             json.dump(tasks, task_file)
 
+
 def store_coinbase(info):
     ensure_exists(f'{Path.home()}/.openmined/coinbase.json', info)
+
 
 def load_coinbase():
     if not os.path.exists(f'{Path.home()}/.openmined/coinbase.json'):
