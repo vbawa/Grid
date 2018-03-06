@@ -14,15 +14,15 @@ class GridWorker():
     def __init__(self):
         # super().__init__('worker')
 
-
         self.api = utils.get_ipfs_api()
         peer_id = self.api.config_show()['Identity']['PeerID']
         self.id = f'{peer_id}'
 
+        self.email = utils.load_email()
+
         # switch to this to make local develop work
         # self.id = f'{mode}:{peer_id}'
         self.subscribed_list = []
-        
 
         # LAUNCH SERVICES - these are non-blocking and run on their own threads
 
@@ -82,11 +82,11 @@ class GridWorker():
         def timeout_message(seconds):
             time.sleep(int(seconds))
             self.publish(channel=random_channel,message=["timeout after " + str(seconds) + " seconds"])
-        
+
         def send():
             self.publish(channel=channel,message=[message,random_channel])
             t1 = Thread(target=timeout_message, args={timeout})
-            t1.start() 
+            t1.start()
 
         response = self.listen_to_channel_sync(random_channel, response_handler, send)
 
@@ -122,7 +122,7 @@ class GridWorker():
         first_proc = True
 
         if channel not in self.subscribed_list:
-            
+
             # print(f"SUBSCRIBING TO {channel}")
             new_messages = self.api.pubsub_sub(topic=channel, stream=True)
             self.subscribed_list.append(channel)
