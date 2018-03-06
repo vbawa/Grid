@@ -19,7 +19,16 @@ class GridPayment():
             self.redirect = f"{self.host}/callback"
 
     def authorize(self):
-        return websockets.get_token(self.hostname, self.redirect)
+        config = utils.load_coinbase()
+        if 'accessToken' in config.keys():
+            answer = input('You are already authorized.  Are you sure you want to re-auth? (y/n)')
+            while answer != 'y' and answer != 'n':
+                answer = input('y/n')
+
+        if answer == 'y':
+            return websockets.get_token(self.hostname, self.redirect)
+        else:
+            return
 
     def send_ether(self, email, amount, access_token=None, refresh_token=None):
         if access_token is None:
