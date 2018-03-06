@@ -14,8 +14,8 @@ import json
 
 class TorchService(BaseService):
 
-    # this service just listens on the general "openmined" channel so that other nodes
-    # on the network know its there.
+    # this service creates everything the client needs to be able to interact with torch on the Grid
+    # (it's really awesome, but it's a WIP)
 
     def __init__(self,worker):
         super().__init__(worker)
@@ -24,7 +24,7 @@ class TorchService(BaseService):
 
         self.objects = {}
 
-        self.hook_float_tensor_add()
+        # self.hook_float_tensor_add()
         self.hook_float_tensor___init__()
         self.hook_float_tensor_serde()
         self.hook_float_tensor_send()
@@ -47,12 +47,6 @@ class TorchService(BaseService):
         listen_for_obj_callback_channel = channels.torch_listen_for_obj_req_callback(self.worker.id)
         self.worker.listen_to_channel(listen_for_obj_callback_channel,self.receive_obj_request)
 
-        # I listen for people to respond to my requests for tensors!!
-        listen_for_obj_req_response = channels.torch_listen_for_obj_req_response_callback(self.worker.id)
-        self.worker.listen_to_channel(listen_for_obj_req_response,self.receive_obj)
-
-        # listen_for_obj_response_callback_channel = channels.torch_listen_for_obj_response_callback(self.worker.id)
-        # self.worker.listen_to_channel(listen_for_obj_response_callback_channel,print_messages)
 
     def receive_obj(self,msg):
         self.receive_obj_break(msg)
@@ -87,14 +81,11 @@ class TorchService(BaseService):
         return to.receive_command(command)
     
     def request_obj(self,obj):
-        random_channel = self.worker.id + "_" + str(random.randint(0, 1e10))
 
-        def send():
-            self.worker.publish(channel=channels.torch_listen_for_obj_req_callback(obj.owner),message=[obj.id,random_channel])
+        return self.worker.request_response(channel=channels.torch_listen_for_obj_req_callback(obj.owner),
+                                            message=obj.id,
+                                            response_handler=self.receive_obj_break)
 
-        response = self.worker.listen_to_channel_sync(random_channel, self.receive_obj_break, send)
-        return response
-    
     def receive_obj_request(self,msg):
         
         obj_id, response_channel = json.loads(msg['data'])
@@ -163,8 +154,8 @@ class TorchService(BaseService):
 
 
     # FLOAT TENSOR FUNCTIONS
-    def hook_float_tensor___init__(self):
-        def new___init__(self,tensor,owner=self, *args, **kwargs):
+    def hook_float_tensor___init__(service_self):
+        def new___init__(self,tensor,owner=service_self, *args, **kwargs):
             super(torch.FloatTensor, self).__init__(*args, **kwargs)
             self = owner.register_object(self,False)
          
@@ -226,16 +217,21 @@ class TorchService(BaseService):
         torch.FloatTensor.de = de 
         
 
-    def hook_float_tensor___repr__(self):
+    def hook_float_tensor___repr__(service_self):
         def __repr__(self):
-            if(self.worker.id == self.owner):
+            if(service_self.worker.id == self.owner):
                 return self.old__repr__()
             else:
                 return "[ torch.FloatTensor - Location:" + str(self.owner) + " ]"
 
-        torch.FloatTensor.old__repr__ = torch.FloatTensor.__repr__
-        torch.FloatTensor.__repr__ = __repr__
+        # if haven't reserved the actual __repr__ function - reserve it now
+        try:
+            torch.FloatTensor.old__repr__
+        except:
+            torch.FloatTensor.old__repr__ = torch.FloatTensor.__repr__
+            
 
+        torch.FloatTensor.__repr__ = __repr__
 
 
     def hook_float_tensor_send(self):
@@ -248,7 +244,10 @@ class TorchService(BaseService):
         
     def hook_float_tensor_get(self):
         def get(self):
-            self.worker.services['torch_service'].request_obj(self)
+
+            if(self.worker.id != self.owner):
+                self.worker.services['torch_service'].request_obj(self)
+
             return self
         torch.FloatTensor.get = get
         

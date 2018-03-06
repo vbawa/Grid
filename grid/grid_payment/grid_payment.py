@@ -22,10 +22,10 @@ class GridPayment():
         return websockets.get_token(self.hostname, self.redirect)
 
     def send_ether(self, email, amount, access_token=None, refresh_token=None):
-        if access_token == None:
+        if access_token is None:
             access_token = utils.load_coinbase()['accessToken']
 
-        if refresh_token == None:
+        if refresh_token is None:
             refresh_token = utils.load_coinbase()['refreshToken']
 
         send_obj = {
@@ -43,9 +43,26 @@ class GridPayment():
             send_obj['two_factor_code'] = input('Enter two factor auth code: ')
 
             r = requests.post(self.host + route, json=send_obj)
+        elif r.status_code == 401:
+            tokens = r.json()
+            utils.store_coinbase(tokens)
+            self.send_ether(email, amount)
 
-            print(r.status_code)
-        else:
-            print(r.status_code)
-
+        print(r.status_code)
         return r.status_code
+
+    def refresh(self, access_token, refresh_token):
+        send_obj = {
+            'accessToken': access_token,
+            'refreshToken': refresh_token
+        }
+
+        route = "/api/v0/refresh"
+
+        r = requests.post(self.host + route, json=send_obj)
+
+        print(r.status_code)
+        if r.status_code == 200:
+            ret = r.json()
+            print(ret)
+            return ret
