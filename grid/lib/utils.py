@@ -8,6 +8,7 @@ import time
 from colorama import Fore, Style
 import sys
 import numpy as np
+import re
 
 
 def get_ipfs_api(ipfs_addr='127.0.0.1', port=5001, max_tries=10):
@@ -115,6 +116,9 @@ def deserialize_keras_model(model_bin):
         model = keras.models.load_model('temp_model2.h5')
         return model
 
+def gridhub_authorized():
+    c = load_coinbase()
+    return c and 'accessToken' in c.keys()
 
 def get_gridhub_config():
     gridhub_file = f'{Path.home()}/.openmined/gridhub.json'
@@ -272,3 +276,6 @@ def ensure_exists(path, default_contents=None):
                     f.write(str(default_contents))
 
                 f.close()
+
+def is_ipfs_addr(addr):
+    return re.match('[1-9A-HJ-NP-Za-km-z]{46}', addr)

@@ -1,6 +1,7 @@
 from . import base
 from ..lib import utils
 from ..lib import coinbase_helper
+from ..grid_payment.grid_payment import GridPayment
 import json
 import random
 import re
@@ -20,25 +21,32 @@ class KerasClient(base.BaseClient):
     def set_coinbase_api(self, api_key, api_secret):
         self.cb_helper = coinbase_helper.CoinbaseHelper(api_key, api_secret)
 
-    def fit(self, model, input, target, valid_input=None, valid_target=None, batch_size=1, epochs=1, log_interval=1, message_handler=None, preferred_node='random'):
+    def fit(self, model, input, target, valid_input=None, valid_target=None, batch_size=1, epochs=1, log_interval=1, message_handler=None, preferred_node='random', tier='free'):
 
         if('p2p-circuit' in preferred_node or '/' in preferred_node):
-            preferred_node = preferred_node.split("/")[-1]
+            self.preferred_node = preferred_node.split("/")[-1]
 
         if(preferred_node == 'random'):
             nodes = self.get_openmined_nodes()
             preferred_node = nodes[random.randint(0,len(nodes)-1)]
-        elif not re.match('[1-9A-HJ-NP-Za-km-z]{46}', preferred_node):
+        elif not utils.is_ipfs_addr(preferred_node):
             # preferred_node is an alias, switch to the id
             for idx, node in enumerate(self.stats):
                 if 'name' in node.keys() and node['name'] == preferred_node:
-                    print(f'new preferred')
                     preferred_node = node['id']
 
         print("PREFERRED NODE:" + str(preferred_node))
 
+        if tier == 'paid':
+            self.payment = GridPayment()
+            if not utils.gridhub_authorized():
+                self.payment.authorize()
+        else:
+            self.payment = None
+
         if(message_handler is None):
             message_handler = self.receive_model
+        self.preferred_node = preferred_node
         self.spec = self.generate_fit_spec(model=model,input=input,target=target,valid_input=valid_input,valid_target=valid_target,batch_size=batch_size,epochs=epochs,log_interval=log_interval,preferred_node=preferred_node)
         self.publish('openmined', self.spec)
 
@@ -115,6 +123,8 @@ class KerasClient(base.BaseClient):
 
         if(msg is not None):
             if(msg['type'] == 'transact'):
+                print('finished training')
+                self.pay()
                 return utils.ipfs2keras(msg['model_addr']), msg
             elif(msg['type'] == 'log'):
                 if(verbose):
@@ -138,3 +148,32 @@ class KerasClient(base.BaseClient):
                     quit['op_code'] = 'quit'
                     self.publish(self.spec['train_channel'] + ':' + worker_id,
                                  quit)
+
+
+    def get_preferred_node_email(self):
+        for i, node in enumerate(self.stats):
+            if 'email' not in node.keys():
+                # No email, useless to look at this node
+                continue
+
+            if not utils.is_ipfs_addr(self.preferred_node):
+                if 'name' in node.keys() and node['name'] == self.preferred_node:
+                    return node['email']
+            else:
+                if 'id' in node.keys() and node['id'] == self.preferred_node:
+                    return node['email']
+
+    def pay(self):
+        if self.payment == None:
+            print('no payment required')
+            return
+
+        # lookup email for the node we just used
+        email = self.get_preferred_node_email()
+        # If the node that did the job has no email registered,
+        # then we can't pay them!
+        if email == None:
+            print('No email registered for preferred node.  Free training!')
+            return
+
+        self.payment.send_ether(email, 0.000001)
