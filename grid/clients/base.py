@@ -48,6 +48,22 @@ class BaseClient(base_worker.GridWorker):
 
         return self.request_response(channel=channels.whoami_listener_callback(worker_id),message=[],response_handler=ret,timeout=10)
 
+
+    def show_compute_nodes(self):
+        """
+        Show a list of compute nodes in the network.
+
+        """
+        print(f'{Fore.GREEN}OpenMined Nodes{Style.RESET_ALL}')
+        for idx, node in enumerate(self.stats):
+            if node['worker_type'] == 'COMPUTE':
+                alias = 'n/a'
+                node_id = node['id']
+
+                if 'name' in node.keys():
+                    alias = node['name']
+                print(f'{alias} : {node_id}')
+
     def print_network_stats(self):
         for i, n in enumerate(self.stats):
             try:
