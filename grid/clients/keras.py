@@ -3,6 +3,7 @@ from ..lib import utils
 from ..lib import coinbase_helper
 import json
 import random
+import re
 
 
 class KerasClient(base.BaseClient):
@@ -27,6 +28,12 @@ class KerasClient(base.BaseClient):
         if(preferred_node == 'random'):
             nodes = self.get_openmined_nodes()
             preferred_node = nodes[random.randint(0,len(nodes)-1)]
+        elif not re.match('[1-9A-HJ-NP-Za-km-z]{46}', preferred_node):
+            # preferred_node is an alias, switch to the id
+            for idx, node in enumerate(self.stats):
+                if 'name' in node.keys() and node['name'] == preferred_node:
+                    print(f'new preferred')
+                    preferred_node = node['id']
 
         print("PREFERRED NODE:" + str(preferred_node))
 

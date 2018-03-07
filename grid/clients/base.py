@@ -52,7 +52,6 @@ class BaseClient(base_worker.GridWorker):
     def show_compute_nodes(self):
         """
         Show a list of compute nodes in the network.
-
         """
         print(f'{Fore.GREEN}OpenMined Nodes{Style.RESET_ALL}')
         for idx, node in enumerate(self.stats):
