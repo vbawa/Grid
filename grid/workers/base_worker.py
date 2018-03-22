@@ -11,34 +11,25 @@ from ..services.broadcast_known_workers import BroadcastKnownWorkersService
 from ..services.whoami import WhoamiService
 
 
-class GridWorker():
-    def __init__(self, node_type, email=None, name=None):
+class GridWorker:
+    """ Abstract class for all types of Grid nodes. """
+    def __init__(self,
+                 node_type : str,
+                 email: str = None,
+                 name: str = None):
         self.node_type = node_type
         self.api = utils.get_ipfs_api(self.node_type)
         self.id = utils.get_id(self.node_type, self.api)
 
-        # load email and name
+        # Read and/or update stored name and email.
         whoami = utils.load_whoami()
-
-        if (email is None):
-            if whoami:
-                self.email = whoami['email']
-            else:
-                self.email = input('Enter your email for payment: ')
-        else:
-            self.email = email
-
-        if (name is None):
-            if (whoami):
-                self.name = whoami['name']
-            else:
-                self.name = input('Enter an easy name to remember you by: ')
-        else:
-            self.name = name
-
-        whoami = {'email': self.email, 'name': self.name}
-
-        utils.store_whoami(whoami)
+        self.email = email or \
+                     whoami.get("email") or \
+                     input("Enter your email for payment: ")
+        self.name = name or \
+                    whoami.get("name") or \
+                    input("Enter an easy name to remember you by: ")
+        utils.store_whoami({'email': self.email, 'name': self.name})
 
         self.subscribed_list = []
 
@@ -57,7 +48,7 @@ class GridWorker():
             self.services[
                 'broadcast_known_workers'] = BroadcastKnownWorkersService(self)
 
-            # WHOMAI
+            # WHOAMI
             self.services['whoami_service'] = WhoamiService(self)
 
     def get_openmined_nodes(self):

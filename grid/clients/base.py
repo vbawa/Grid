@@ -73,7 +73,7 @@ class BaseClient(base_worker.GridWorker):
     def refresh_network_stats(self, print_stats=True):
         om_nodes = self.get_openmined_nodes()
         if self.include_self_discovery:
-            om_nodes.append(utils.get_ipfs_id(self.api))
+            om_nodes.append(self.api.get_ipfs_id())
 
         if (self.stats is not None):
             # try to preserve the order to that g[idx] stays the same

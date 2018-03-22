@@ -1,3 +1,5 @@
+from typing import Optional, Tuple
+
 from grid import ipfsapi
 from pathlib import Path
 import os
@@ -8,31 +10,43 @@ import sys
 import numpy as np
 
 
-def get_ipfs_api(mode, ipfs_addr='127.0.0.1', port=5001, max_tries=25):
-    print(
-        f'\n{Fore.BLUE}UPDATE: {Style.RESET_ALL}Connecting to IPFS... this can take a few seconds...'
-    )
-
-    api = _attempt_ipfs_connection(ipfs_addr, port, 0, 1)
-    if api:
-        id = get_id(mode, api)
-        print(
-            f'\n{Fore.GREEN}SUCCESS: {Style.RESET_ALL}Connected!!! - My ID: {id}'
-        )
+def get_ipfs_api(mode: str,
+                 ipfs_addr='127.0.0.1',
+                 port=5001,
+                 max_tries=25) -> ipfsapi.Client:
+    """ Exits process upon failure. """
+    def _attempt_get_api(*args):
+        api = _attempt_ipfs_connection(*args)
+        if api:
+            grid_id = derive_id(mode, api.get_ipfs_id())
+            print(
+                f'\n{Fore.GREEN}SUCCESS: {Style.RESET_ALL}Connected!!! - My '
+                f'ID: {grid_id}'
+            )
         return api
 
     print(
-        f'\n{Fore.RED}ERROR: {Style.RESET_ALL}could not connect to IPFS.  Is your daemon running with pubsub support at {ipfs_addr} on port {port}? Let me try to start IPFS for you... (this will take ~15 seconds)'
+        f'\n{Fore.BLUE}UPDATE: {Style.RESET_ALL}Connecting to IPFS... this '
+        f'can take a few seconds... '
     )
+
+    api = _attempt_get_api(ipfs_addr, port, 0, 1)
+    if api:
+        return api
+
+    print(
+        f'\n{Fore.RED}ERROR: {Style.RESET_ALL}could not connect to IPFS.  Is '
+        f'your daemon running with pubsub support at {ipfs_addr} on port '
+        f'{port}? Let me try to start IPFS for you... (this will take ~15 '
+        f'seconds) '
+    )
+    # TODO: If os.system's returncode indicates that daemon startup was
+    # unsuccessful, should we even be trying to connect again?
     os.system(
         'ipfs daemon --enable-pubsub-experiment  > ipfs.log 2> ipfs.log.err &')
 
-    api = _attempt_ipfs_connection(ipfs_addr, port, 0, max_tries, _write_dot)
+    api = _attempt_get_api(ipfs_addr, port, 0, max_tries, _write_dot)
     if api:
-        id = get_id(mode, api)
-        print(
-            f'\n{Fore.GREEN}SUCCESS: {Style.RESET_ALL}Connected!!! - My ID: {id}'
-        )
         return api
 
     print(
@@ -49,14 +63,14 @@ def _attempt_ipfs_connection(ipfs_addr,
                              port,
                              current_tries=0,
                              max_tries=10,
-                             progress_fn=None):
+                             progress_fn=None) -> Optional[ipfsapi.Client]:
     current_tries += 1
     try:
         api = ipfsapi.connect(ipfs_addr, port)
         return api
     except:
         if current_tries == max_tries:
-            return False
+            return None
 
         if progress_fn:
             progress_fn()
@@ -66,18 +80,14 @@ def _attempt_ipfs_connection(ipfs_addr,
                                         max_tries)
 
 
-def get_ipfs_id(api):
-    return api.config_show()['Identity']['PeerID']
-
-
 def get_id(node_type, api):
-    peer_id = get_ipfs_id(api)
+    peer_id = api.get_ipfs_id()
     return derive_id(node_type, peer_id)
 
 
-def derive_id(node_type, peer_id):
+def derive_id(node_type, ipfs_peer_id):
     node_type = node_type.lower()
-    return f'{node_type}:{peer_id}'
+    return f'{node_type}:{ipfs_peer_id}'
 
 
 def save_adapter(ipfs, addr):
@@ -127,7 +137,7 @@ def store_whoami(info):
 
 def load_whoami():
     if not os.path.exists(f'{Path.home()}/.openmined/whoami.json'):
-        return None
+        return {}
 
     with open(f'{Path.home()}/.openmined/whoami.json', 'r') as cb:
         return json.loads(cb.read())

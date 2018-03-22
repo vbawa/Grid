@@ -16,10 +16,11 @@ class WhoamiService(BaseService):
         # TODO these below should be listening on self.worker.id but the client
         # does not yet know to ask for info on "computer:IPFS_ADDRESS" yet
         # so just listen on IPFS_ADDRESS
-        print(channels.whoami_listener_callback(utils.get_ipfs_id(self.api)))
+        print(channels.whoami_listener_callback(self.api.get_ipfs_id()))
         self.worker.listen_to_channel(
-            channels.whoami_listener_callback(utils.get_ipfs_id(self.api)),
-            self.get_stats)
+            channels.whoami_listener_callback(self.api.get_ipfs_id()),
+            self.get_stats
+        )
 
     def get_stats(self, message_and_response_channel):
 

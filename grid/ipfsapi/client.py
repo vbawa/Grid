@@ -110,8 +110,14 @@ class Client(object):
         """Connects to the API port of an IPFS node."""
 
         self.chunk_size = chunk_size
+        self.ipfs_id = None  # Cache of IPFS ID for this peer
 
         self._client = self._clientfactory(host, port, base, **defaults)
+
+    def get_ipfs_id(self):
+        """ Retrieves IPFS peer ID from either local cache or daemon """
+        self.ipfs_id = self.ipfs_id or self.config_show()["Identity"]["PeerID"]
+        return self.ipfs_id
 
     def add(self, files, recursive=False, pattern='**', *args, **kwargs):
         """Add a file, or directory of files to IPFS.

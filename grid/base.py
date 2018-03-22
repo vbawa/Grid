@@ -5,7 +5,7 @@ from grid import channels
 class PubSub(object):
     def __init__(self, node_type='client', ipfs_addr='127.0.0.1', port=5001):
         self.node_type = node_type
-        self.api = utils.get_ipfs_api(self.node_type)
+        self.api = utils.get_ipfs_api(self.node_type, ipfs_addr, port)
         self.id = utils.get_id(self.node_type, self.api)
         self.subscribed_list = []
 
